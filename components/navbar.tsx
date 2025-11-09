@@ -1,0 +1,100 @@
+"use client"
+
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { supabase } from "@/lib/supabase"
+import { isAdmin, clearAdminSession } from "@/lib/auth"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+
+/**
+ * Navigation bar component
+ * Displays links to different pages and handles authentication state
+ */
+export function Navbar() {
+  const pathname = usePathname()
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [admin, setAdmin] = useState(false)
+
+  useEffect(() => {
+    // Check for Supabase user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+    })
+
+    // Check for admin session
+    setAdmin(isAdmin())
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    clearAdminSession()
+    setUser(null)
+    setAdmin(false)
+    router.push("/")
+  }
+
+  const isActive = (path: string) => pathname === path
+
+  return (
+    <nav className="border-b bg-background">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <div className="flex items-center space-x-6">
+          <Link href="/" className="text-xl font-bold">
+            Psychiatry Directory
+          </Link>
+          <div className="flex space-x-4">
+            <Link href="/">
+              <Button variant={isActive("/") ? "default" : "ghost"}>
+                Home
+              </Button>
+            </Link>
+            {!user && !admin && (
+              <>
+                <Link href="/psychiatrist-login">
+                  <Button variant={isActive("/psychiatrist-login") ? "default" : "ghost"}>
+                    Psychiatrist Login
+                  </Button>
+                </Link>
+                <Link href="/admin-login">
+                  <Button variant={isActive("/admin-login") ? "default" : "ghost"}>
+                    Admin Login
+                  </Button>
+                </Link>
+              </>
+            )}
+            {(user || admin) && (
+              <Link href="/dashboard">
+                <Button variant={isActive("/dashboard") ? "default" : "ghost"}>
+                  Dashboard
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center space-x-4">
+          <ThemeToggle />
+          {(user || admin) && (
+            <Button variant="outline" onClick={handleSignOut}>
+              Sign Out
+            </Button>
+          )}
+        </div>
+      </div>
+    </nav>
+  )
+}
+
+
