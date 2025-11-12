@@ -1,5 +1,5 @@
-**Date:** Nov 10, 2025**
-Attendees:** Yiqi, Laure, Cindy
+**Date:** Nov 10, 2025
+Attendees: Yiqi, Laure, Cindy
 
 **What Went Well**
 End-to-end patient flow functional from directory to request confirmation.
