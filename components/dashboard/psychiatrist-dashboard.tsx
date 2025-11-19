@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, ReactNode } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { supabase } from "@/lib/supabase"
 import { AppointmentRequest } from "@/types/database"
 import { useRouter } from "next/navigation"
@@ -22,11 +23,16 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
   const router = useRouter()
   const [requests, setRequests] = useState<AppointmentRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedRequest, setSelectedRequest] = useState<AppointmentRequest | null>(null)
+  const [detailsOpen, setDetailsOpen] = useState(false)
 
   /**
    * Fetch appointment requests for this psychiatrist
    */
   const fetchRequests = useCallback(async () => {
+    setLoading(true)
+    setError(null)
     try {
       // Get the current users email from Supabase auth
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -52,19 +58,23 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
         return
       }
 
-      // Fetch requests for this psychiatrist
+      // Fetch requests for this psychiatrist via API
       if (psychiatrist) {
-        const { data, error } = await supabase
-          .from("appointment_requests")
-          .select("*")
-          .eq("psychiatrist_id", psychiatrist.id)
-          .order("created_at", { ascending: false })
+        const response = await fetch(`/api/appointments?psychiatristId=${psychiatrist.id}`, {
+          cache: "no-store",
+        })
 
-        if (error) throw error
-        setRequests(data || [])
+        const result = await response.json()
+
+        if (!response.ok || result.error) {
+          throw new Error(result.error || "Failed to fetch appointment requests")
+        }
+
+        setRequests(result.data || [])
       }
     } catch (error) {
       console.error("Error fetching requests:", error)
+      setError(error instanceof Error ? error.message : "Failed to load appointment requests")
     } finally {
       setLoading(false)
     }
@@ -122,6 +132,18 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
   const declinedRequests = requests.filter((r) => r.status === "declined")
   const completedRequests = requests.filter((r) => r.status === "completed")
 
+  const handleCardSelect = (request: AppointmentRequest) => {
+    setSelectedRequest(request)
+    setDetailsOpen(true)
+  }
+
+  const handleDialogChange = (open: boolean) => {
+    setDetailsOpen(open)
+    if (!open) {
+      setSelectedRequest(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -145,6 +167,12 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
           </Button>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -182,36 +210,60 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
           <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
-          <RequestsTable requests={requests} onStatusUpdate={updateStatus} />
+        <TabsContent value="all">
+          <RequestsGrid requests={requests} onStatusUpdate={updateStatus} onSelect={handleCardSelect} />
         </TabsContent>
-        <TabsContent value="pending" className="space-y-4">
-          <RequestsTable requests={pendingRequests} onStatusUpdate={updateStatus} />
+        <TabsContent value="pending">
+          <RequestsGrid requests={pendingRequests} onStatusUpdate={updateStatus} onSelect={handleCardSelect} />
         </TabsContent>
-        <TabsContent value="approved" className="space-y-4">
-          <RequestsTable requests={approvedRequests} onStatusUpdate={updateStatus} />
+        <TabsContent value="approved">
+          <RequestsGrid requests={approvedRequests} onStatusUpdate={updateStatus} onSelect={handleCardSelect} />
         </TabsContent>
-        <TabsContent value="declined" className="space-y-4">
-          <RequestsTable requests={declinedRequests} onStatusUpdate={updateStatus} />
+        <TabsContent value="declined">
+          <RequestsGrid requests={declinedRequests} onStatusUpdate={updateStatus} onSelect={handleCardSelect} />
         </TabsContent>
-        <TabsContent value="completed" className="space-y-4">
-          <RequestsTable requests={completedRequests} onStatusUpdate={updateStatus} />
+        <TabsContent value="completed">
+          <RequestsGrid requests={completedRequests} onStatusUpdate={updateStatus} onSelect={handleCardSelect} />
         </TabsContent>
       </Tabs>
+
+      <Dialog open={detailsOpen} onOpenChange={handleDialogChange}>
+        <DialogContent className="max-w-2xl">
+          {selectedRequest && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedRequest.patient_name}</DialogTitle>
+                <DialogDescription>
+                  Submitted {selectedRequest.created_at ? new Date(selectedRequest.created_at).toLocaleString() : "N/A"} · Status:{" "}
+                  <span className="capitalize">{selectedRequest.status}</span>
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4">
+                <DetailRow label="Patient Email" value={selectedRequest.patient_email} />
+                <DetailRow label="Preferred Appointment Type" value={selectedRequest.preferred_appointment_type || "Not provided"} />
+                <DetailRow label="Preferred Times" value={formatList(selectedRequest.preferred_times)} />
+                <DetailRow label="What brings you here?" value={selectedRequest.what_brings_you || "Not provided"} />
+                <DetailRow label="Hoping to work on" value={formatList(selectedRequest.hoping_to_work_on)} />
+                <DetailRow label="Other (if provided)" value={selectedRequest.other_work_on || "Not provided"} />
+                <DetailRow label="Spoken with a professional before?" value={selectedRequest.spoken_before || "Not provided"} />
+                <DetailRow label="Anything else" value={selectedRequest.anything_else || "Not provided"} />
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
 
-/**
- * Requests table component
- * Displays appointment requests in a table format with status updates
- */
-function RequestsTable({
+function RequestsGrid({
   requests,
   onStatusUpdate,
+  onSelect,
 }: {
   requests: AppointmentRequest[]
   onStatusUpdate: (id: string, status: string) => void
+  onSelect: (request: AppointmentRequest) => void
 }) {
   if (requests.length === 0) {
     return (
@@ -224,17 +276,59 @@ function RequestsTable({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       {requests.map((request) => (
-        <Card key={request.id}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>{request.patient_name}</CardTitle>
+        <Card
+          key={request.id}
+          className="hover:shadow-lg transition-shadow cursor-pointer"
+          onClick={() => onSelect(request)}
+        >
+          <CardHeader className="space-y-1">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <CardTitle className="text-lg">{request.patient_name}</CardTitle>
+                <CardDescription className="capitalize">
+                  {request.preferred_appointment_type || "Not specified"}
+                </CardDescription>
+              </div>
+              <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium capitalize">
+                {request.status}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {getPreviewText(request.what_brings_you)}
+            </p>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>
+                {request.created_at
+                  ? new Date(request.created_at).toLocaleDateString()
+                  : "Date unknown"}
+              </span>
+              <button
+                type="button"
+                className="font-medium text-primary"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onSelect(request)
+                }}
+              >
+                View details
+              </button>
+            </div>
+            <div
+              className="space-y-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-xs font-medium text-muted-foreground">
+                Update status
+              </p>
               <Select
                 value={request.status}
                 onValueChange={(value) => onStatusUpdate(request.id, value)}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -245,42 +339,6 @@ function RequestsTable({
                 </SelectContent>
               </Select>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div>
-              <p className="text-sm font-medium">Email</p>
-              <p className="text-sm text-muted-foreground">{request.patient_email}</p>
-            </div>
-            {request.preferred_date && (
-              <div>
-                <p className="text-sm font-medium">Preferred Date</p>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(request.preferred_date).toLocaleDateString()}
-                </p>
-              </div>
-            )}
-            {request.preferred_time && (
-              <div>
-                <p className="text-sm font-medium">Preferred Time</p>
-                <p className="text-sm text-muted-foreground">{request.preferred_time}</p>
-              </div>
-            )}
-            {request.message && (
-              <div>
-                <p className="text-sm font-medium">Message</p>
-                <p className="text-sm text-muted-foreground whitespace-pre-line">
-                  {request.message}
-                </p>
-              </div>
-            )}
-            <div>
-              <p className="text-sm font-medium">Requested On</p>
-              <p className="text-sm text-muted-foreground">
-                {request.created_at
-                  ? new Date(request.created_at).toLocaleString()
-                  : "N/A"}
-              </p>
-            </div>
           </CardContent>
         </Card>
       ))}
@@ -288,3 +346,21 @@ function RequestsTable({
   )
 }
 
+const getPreviewText = (text?: string | null) => {
+  if (!text) return "No details provided."
+  return text.length > 100 ? `${text.slice(0, 100)}…` : text
+}
+
+const formatList = (values?: string[] | null) => {
+  if (!values || values.length === 0) return "Not provided"
+  return values.join(", ")
+}
+
+function DetailRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <p className="text-sm font-medium text-muted-foreground">{label}</p>
+      <p className="text-sm whitespace-pre-line">{value || "Not provided"}</p>
+    </div>
+  )
+}

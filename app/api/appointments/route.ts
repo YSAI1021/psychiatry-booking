@@ -2,6 +2,38 @@ import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 
 /**
+ * Fetch appointment requests for a psychiatrist
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const psychiatristId = request.nextUrl.searchParams.get("psychiatristId")
+
+    if (!psychiatristId) {
+      return NextResponse.json(
+        { error: "psychiatristId query parameter is required" },
+        { status: 400 }
+      )
+    }
+
+    const { data, error } = await supabase
+      .from("appointment_requests")
+      .select("*")
+      .eq("psychiatrist_id", psychiatristId)
+      .order("created_at", { ascending: false })
+
+    if (error) throw error
+
+    return NextResponse.json({ data, error: null }, { status: 200 })
+  } catch (error: any) {
+    console.error("Error in GET /api/appointments:", error)
+    return NextResponse.json(
+      { error: error.message || "Internal server error" },
+      { status: 500 }
+    )
+  }
+}
+
+/**
  * API route for appointment requests
  * Handles POST requests to create new appointment requests
  */

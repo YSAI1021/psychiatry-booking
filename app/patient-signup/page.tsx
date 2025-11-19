@@ -55,6 +55,7 @@ export default function PatientSignUp() {
           .insert([
             {
               id: authData.user.id,
+              user_id: authData.user.id,
               name: data.name,
               email: data.email,
             },
