@@ -18,11 +18,24 @@ export function Navbar() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [admin, setAdmin] = useState(false)
+  const [isPatient, setIsPatient] = useState(false)
 
   useEffect(() => {
     // Check for Supabase user
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null)
+      
+      // Check if user is a patient
+      if (session?.user) {
+        const { data: patient } = await supabase
+          .from("patients")
+          .select("id")
+          .eq("id", session.user.id)
+          .single()
+        setIsPatient(!!patient)
+      } else {
+        setIsPatient(false)
+      }
     })
 
     // Check for admin session
@@ -31,8 +44,19 @@ export function Navbar() {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null)
+      
+      if (session?.user) {
+        const { data: patient } = await supabase
+          .from("patients")
+          .select("id")
+          .eq("id", session.user.id)
+          .single()
+        setIsPatient(!!patient)
+      } else {
+        setIsPatient(false)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -53,7 +77,7 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center space-x-6">
           <Link href="/" className="text-xl font-bold">
-            Psychiatry Directory
+            PsyConnect
           </Link>
           <div className="flex space-x-4">
             <Link href="/">
@@ -63,6 +87,11 @@ export function Navbar() {
             </Link>
             {!user && !admin && (
               <>
+                <Link href="/patient-login">
+                  <Button variant={isActive("/patient-login") ? "default" : "ghost"}>
+                    Patient Login
+                  </Button>
+                </Link>
                 <Link href="/psychiatrist-login">
                   <Button variant={isActive("/psychiatrist-login") ? "default" : "ghost"}>
                     Psychiatrist Login
@@ -75,7 +104,21 @@ export function Navbar() {
                 </Link>
               </>
             )}
-            {(user || admin) && (
+            {isPatient && (
+              <Link href="/patient-dashboard">
+                <Button variant={isActive("/patient-dashboard") ? "default" : "ghost"}>
+                  My Dashboard
+                </Button>
+              </Link>
+            )}
+            {(user && !isPatient) && (
+              <Link href="/dashboard">
+                <Button variant={isActive("/dashboard") ? "default" : "ghost"}>
+                  Dashboard
+                </Button>
+              </Link>
+            )}
+            {admin && (
               <Link href="/dashboard">
                 <Button variant={isActive("/dashboard") ? "default" : "ghost"}>
                   Dashboard
@@ -90,6 +133,13 @@ export function Navbar() {
             <Button variant="outline" onClick={handleSignOut}>
               Sign Out
             </Button>
+          )}
+          {!user && !admin && (
+            <Link href="/patient-signup">
+              <Button variant="outline">
+                Patient Sign Up
+              </Button>
+            </Link>
           )}
         </div>
       </div>

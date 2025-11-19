@@ -3,21 +3,31 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { supabase } from "@/lib/supabase"
 import { Psychiatrist } from "@/types/database"
 import { Button } from "@/components/ui/button"
 
 /**
  * Home page - Public psychiatrist directory
- * Displays a list of all psychiatrists available for booking
+ * Displays a list of all psychiatrists available for booking with filtering
  */
 export default function Home() {
   const [psychiatrists, setPsychiatrists] = useState<Psychiatrist[]>([])
+  const [filteredPsychiatrists, setFilteredPsychiatrists] = useState<Psychiatrist[]>([])
   const [loading, setLoading] = useState(true)
+  const [specialtyFilter, setSpecialtyFilter] = useState<string>("")
+  const [locationFilter, setLocationFilter] = useState<string>("")
+  const [availabilityFilter, setAvailabilityFilter] = useState<string>("")
 
   useEffect(() => {
     fetchPsychiatrists()
   }, [])
+
+  useEffect(() => {
+    filterPsychiatrists()
+  }, [psychiatrists, specialtyFilter, locationFilter, availabilityFilter])
 
   /**
    * Fetch all psychiatrists from Supabase
@@ -38,6 +48,33 @@ export default function Home() {
     }
   }
 
+  /**
+   * Filter psychiatrists based on search criteria
+   */
+  const filterPsychiatrists = () => {
+    let filtered = [...psychiatrists]
+
+    if (specialtyFilter) {
+      filtered = filtered.filter((p) =>
+        p.specialty.toLowerCase().includes(specialtyFilter.toLowerCase())
+      )
+    }
+
+    if (locationFilter) {
+      filtered = filtered.filter((p) =>
+        p.location.toLowerCase().includes(locationFilter.toLowerCase())
+      )
+    }
+
+    if (availabilityFilter) {
+      filtered = filtered.filter((p) =>
+        p.availability?.toLowerCase().includes(availabilityFilter.toLowerCase())
+      )
+    }
+
+    setFilteredPsychiatrists(filtered)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -49,23 +86,62 @@ export default function Home() {
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-4xl font-bold">Psychiatrist Directory</h1>
+        <h1 className="text-4xl font-bold">PsyConnect</h1>
         <p className="text-muted-foreground text-lg">
           Browse our network of qualified psychiatrists and request an appointment
         </p>
       </div>
 
-      {psychiatrists.length === 0 ? (
+      <Card>
+        <CardHeader>
+          <CardTitle>Filter Psychiatrists</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="specialty">Specialty</Label>
+              <Input
+                id="specialty"
+                value={specialtyFilter}
+                onChange={(e) => setSpecialtyFilter(e.target.value)}
+                placeholder="Filter by specialty..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                placeholder="Filter by location..."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="availability">Availability</Label>
+              <Input
+                id="availability"
+                value={availabilityFilter}
+                onChange={(e) => setAvailabilityFilter(e.target.value)}
+                placeholder="Filter by availability..."
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {filteredPsychiatrists.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
-              No psychiatrists available at this time.
+              {psychiatrists.length === 0
+                ? "No psychiatrists available at this time."
+                : "No psychiatrists match your filters."}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {psychiatrists.map((psychiatrist) => (
+          {filteredPsychiatrists.map((psychiatrist) => (
             <Card key={psychiatrist.id} className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle>{psychiatrist.name}</CardTitle>
@@ -75,10 +151,6 @@ export default function Home() {
                 <div>
                   <p className="text-sm text-muted-foreground">Location</p>
                   <p className="font-medium">{psychiatrist.location}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Bio</p>
-                  <p className="text-sm line-clamp-3">{psychiatrist.bio}</p>
                 </div>
                 <Link href={`/psychiatrist/${psychiatrist.id}`}>
                   <Button className="w-full">View Profile & Request Appointment</Button>

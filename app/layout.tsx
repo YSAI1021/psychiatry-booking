@@ -7,7 +7,7 @@ import { Navbar } from "@/components/navbar"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Psychiatry Directory & Appointment System",
+  title: "PsyConnect - Connect with Mental Health Professionals",
   description: "Browse psychiatrists and request appointments",
 }
 

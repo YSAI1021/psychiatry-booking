@@ -18,12 +18,15 @@ import {
 import { supabase } from "@/lib/supabase"
 import { Psychiatrist, AppointmentRequest } from "@/types/database"
 import { Trash2, Edit } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { clearAdminSession } from "@/lib/auth"
 
 /**
  * Admin dashboard component
  * Allows admin to manage psychiatrists and view all appointment requests
  */
 export function AdminDashboard() {
+  const router = useRouter()
   const [psychiatrists, setPsychiatrists] = useState<Psychiatrist[]>([])
   const [requests, setRequests] = useState<AppointmentRequest[]>([])
   const [loading, setLoading] = useState(true)
@@ -114,6 +117,12 @@ export function AdminDashboard() {
     }
   }
 
+  const handleSignOut = () => {
+    clearAdminSession()
+    router.push("/admin-login")
+    router.refresh()
+  }
+
   const pendingRequests = requests.filter((r) => r.status === "pending")
 
   if (loading) {
@@ -127,10 +136,17 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <p className="text-muted-foreground">
-          Manage psychiatrists and view all appointment requests
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <p className="text-muted-foreground">
+              Manage psychiatrists and view all appointment requests
+            </p>
+          </div>
+          <Button variant="outline" onClick={handleSignOut}>
+            Sign Out
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

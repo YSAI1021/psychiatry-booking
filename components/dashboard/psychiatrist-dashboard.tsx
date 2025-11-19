@@ -4,8 +4,10 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { supabase } from "@/lib/supabase"
+import { Button } from "@/components/ui/button"
+import { supabase, signOut } from "@/lib/supabase"
 import { AppointmentRequest } from "@/types/database"
+import { useRouter } from "next/navigation"
 
 interface PsychiatristDashboardProps {
   userId: string
@@ -16,6 +18,7 @@ interface PsychiatristDashboardProps {
  * Displays appointment requests for the logged-in psychiatrist
  */
 export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
+  const router = useRouter()
   const [requests, setRequests] = useState<AppointmentRequest[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -100,6 +103,12 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
     }
   }
 
+  const handleSignOut = async () => {
+    await signOut()
+    router.push("/psychiatrist-login")
+    router.refresh()
+  }
+
   const pendingRequests = requests.filter((r) => r.status === "pending")
   const approvedRequests = requests.filter((r) => r.status === "approved")
   const declinedRequests = requests.filter((r) => r.status === "declined")
@@ -116,10 +125,17 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Psychiatrist Dashboard</h1>
-        <p className="text-muted-foreground">
-          Manage your appointment requests
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Psychiatrist Dashboard</h1>
+            <p className="text-muted-foreground">
+              Manage your appointment requests
+            </p>
+          </div>
+          <Button variant="outline" onClick={handleSignOut}>
+            Sign Out
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

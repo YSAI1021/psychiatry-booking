@@ -8,7 +8,22 @@ import { supabase } from "@/lib/supabase"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { psychiatrist_id, patient_name, patient_email, preferred_date, preferred_time, message } = body
+    const {
+      psychiatrist_id,
+      patient_name,
+      patient_email,
+      preferred_appointment_type,
+      preferred_times,
+      what_brings_you,
+      hoping_to_work_on,
+      other_work_on,
+      spoken_before,
+      anything_else,
+      // Legacy fields for backward compatibility
+      preferred_date,
+      preferred_time,
+      message,
+    } = body
 
     // Validate required fields
     if (!psychiatrist_id || !patient_name || !patient_email) {
@@ -35,6 +50,14 @@ export async function POST(request: NextRequest) {
           psychiatrist_id,
           patient_name,
           patient_email,
+          preferred_appointment_type: preferred_appointment_type || null,
+          preferred_times: preferred_times || null,
+          what_brings_you: what_brings_you || null,
+          hoping_to_work_on: hoping_to_work_on || null,
+          other_work_on: other_work_on || null,
+          spoken_before: spoken_before || null,
+          anything_else: anything_else || null,
+          // Legacy fields for backward compatibility
           preferred_date: preferred_date || null,
           preferred_time: preferred_time || null,
           message: message || null,
