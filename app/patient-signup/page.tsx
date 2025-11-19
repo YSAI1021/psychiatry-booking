@@ -46,16 +46,15 @@ export default function PatientSignUp() {
   
       if (authError) throw authError
   
-      // Check if email confirmation is required
-      if (!signUpData.session) {
-        setError("Account created! Please check your email to confirm and then log in.")
-        setLoading(false)
-        return
+      // Check if we got a session (user is automatically logged in)
+      if (signUpData.session) {
+        // User is logged in - redirect to dashboard
+        router.push("/patient-dashboard")
+        router.refresh()
+      } else {
+        // Email confirmation required
+        setError("Account created! Please check your email to confirm your account, then log in.")
       }
-  
-      // If we have a session, user is logged in - redirect to dashboard
-      router.push("/patient-dashboard")
-      router.refresh()
   
     } catch (err: any) {
       console.error("Signup error:", err)
