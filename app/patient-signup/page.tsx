@@ -41,27 +41,22 @@ export default function PatientSignUp() {
   
     try {
       // Create Supabase auth user
-      const {
-        data: { session, user },
-        error: authError,
-      } = await supabase.auth.signUp({
+      const { data: signUpData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
       })
   
       if (authError) throw authError
-      if (!user || !session) throw new Error("Sign up failed to return session or user")
   
-      // Ensure Supabase client uses the new session
-      await supabase.auth.setSession(session)
+      const user = signUpData.user
+      if (!user) throw new Error("Sign up failed: no user returned")
   
-      // Insert patient record with user_id for RLS
+      // Insert patient record (RLS will allow this)
       const { error: patientError } = await supabase
         .from("patients")
         .insert([
           {
-            id: user.id,        // Optional: if you're using this as PK
-            user_id: user.id,   // Required: for RLS
+            user_id: user.id,
             name: data.name,
             email: data.email,
           },
@@ -69,9 +64,16 @@ export default function PatientSignUp() {
   
       if (patientError) throw patientError
   
-      // Redirect to patient dashboard
+      // If email confirmation is ON, do NOT redirect
+      if (!signUpData.session) {
+        setError("Account created! Please check your email to confirm your account.")
+        return
+      }
+  
+      // If email confirmation is OFF, redirect immediately
       router.push("/patient-dashboard")
       router.refresh()
+  
     } catch (err: any) {
       setError(err.message || "Failed to create account")
     } finally {
