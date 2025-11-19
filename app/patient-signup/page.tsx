@@ -38,7 +38,7 @@ export default function PatientSignUp() {
   const onSubmit = async (data: SignUpFormData) => {
     setLoading(true)
     setError(null)
-
+  
     try {
       // Create Supabase auth user
       const {
@@ -48,55 +48,36 @@ export default function PatientSignUp() {
         email: data.email,
         password: data.password,
       })
-      
+  
       if (authError) throw authError
-      
       if (!user || !session) throw new Error("Sign up failed to return session or user")
-      
+  
       // Ensure Supabase client uses the new session
       await supabase.auth.setSession(session)
-      
-      // Then insert patient record
+  
+      // Insert patient record with user_id for RLS
       const { error: patientError } = await supabase
         .from("patients")
         .insert([
           {
-            id: user.id,
-            user_id: user.id,
+            id: user.id,        // Optional: if you're using this as PK
+            user_id: user.id,   // Required: for RLS
             name: data.name,
             email: data.email,
           },
         ])
-      
+  
       if (patientError) throw patientError
-      
-
-      if (authError) throw authError
-
-      if (authData.user) {
-        // Create patient record
-        const { error: patientError } = await supabase
-          .from("patients")
-          .insert([
-            {
-              id: authData.user.id,
-              user_id: authData.user.id,
-              name: data.name,
-              email: data.email,
-            },
-          ])
-
-        if (patientError) throw patientError
-
-        router.push("/patient-dashboard")
-        router.refresh()
-      }
+  
+      // Redirect to patient dashboard
+      router.push("/patient-dashboard")
+      router.refresh()
     } catch (err: any) {
       setError(err.message || "Failed to create account")
     } finally {
       setLoading(false)
     }
-  }
+  }  
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
