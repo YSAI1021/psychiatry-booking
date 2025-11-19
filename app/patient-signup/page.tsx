@@ -34,43 +34,29 @@ export default function PatientSignUp() {
   const onSubmit = async (data: SignUpFormData) => {
     setLoading(true)
     setError(null)
-
+  
     try {
       const { data: signUpData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          data: { name: data.name }, // Store name in metadata
+          data: { name: data.name },
         },
       })
-
+  
       if (authError) throw authError
-
-      const session = signUpData.session
-
-      if (session) {
-        await supabase.auth.setSession({
-          access_token: session.access_token,
-          refresh_token: session.refresh_token,
-        })
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser()
-
-      if (currentUserError || !currentUserData.user) {
-        throw new Error("User not authenticated after signup.")
-      }
-
-      if (!session) {
+  
+      // Check if email confirmation is required
+      if (!signUpData.session) {
         setError("Account created! Please check your email to confirm and then log in.")
+        setLoading(false)
         return
       }
-
+  
+      // If we have a session, user is logged in - redirect to dashboard
       router.push("/patient-dashboard")
       router.refresh()
-
+  
     } catch (err: any) {
       console.error("Signup error:", err)
       setError(err.message || "Something went wrong. Please try again.")
