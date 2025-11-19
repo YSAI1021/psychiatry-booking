@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -17,11 +17,7 @@ export default function PatientDashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession()
       
@@ -58,7 +54,11 @@ export default function PatientDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   const handleSignOut = async () => {
     await signOut()
@@ -92,7 +92,7 @@ export default function PatientDashboard() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
-              You haven't submitted any appointment requests yet.
+              You haven&apos;t submitted any appointment requests yet.
             </p>
             <div className="mt-4 text-center">
               <Button onClick={() => router.push("/")}>

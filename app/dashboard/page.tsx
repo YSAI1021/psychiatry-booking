@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { isAdmin } from "@/lib/auth"
@@ -18,14 +18,10 @@ export default function Dashboard() {
   const [admin, setAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
   /**
    * Check authentication status for both Supabase user and admin
    */
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       // Check for Supabase user
       const { data: { session } } = await supabase.auth.getSession()
@@ -44,7 +40,11 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   if (loading) {
     return (

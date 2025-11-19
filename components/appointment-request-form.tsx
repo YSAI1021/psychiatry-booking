@@ -74,7 +74,7 @@ export function AppointmentRequestForm({
 
     // Validate hoping to work on
     if (!data.hoping_to_work_on || data.hoping_to_work_on.length === 0) {
-      setError("Please select at least one option for what you're hoping to work on")
+      setError("Please select at least one option for what you&apos;re hoping to work on")
       setSubmitting(false)
       return
     }
@@ -87,7 +87,7 @@ export function AppointmentRequestForm({
     }
 
     if (!data.spoken_before) {
-      setError("Please answer whether you've spoken with a therapist before")
+      setError("Please answer whether you&apos;ve spoken with a therapist before")
       setSubmitting(false)
       return
     }

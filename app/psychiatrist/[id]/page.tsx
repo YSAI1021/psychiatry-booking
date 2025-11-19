@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -18,16 +18,10 @@ export default function PsychiatristProfile() {
   const [psychiatrist, setPsychiatrist] = useState<Psychiatrist | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (params.id) {
-      fetchPsychiatrist(params.id as string)
-    }
-  }, [params.id])
-
   /**
    * Fetch psychiatrist details from Supabase
    */
-  const fetchPsychiatrist = async (id: string) => {
+  const fetchPsychiatrist = useCallback(async (id: string) => {
     try {
       const { data, error } = await supabase
         .from("psychiatrists")
@@ -42,7 +36,13 @@ export default function PsychiatristProfile() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (params.id) {
+      fetchPsychiatrist(params.id as string)
+    }
+  }, [params.id, fetchPsychiatrist])
 
   const handleAppointmentSuccess = () => {
     // Form handles success message internally

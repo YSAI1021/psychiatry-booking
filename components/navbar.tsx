@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { supabase } from "@/lib/supabase"
 import { isAdmin, clearAdminSession } from "@/lib/auth"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 
 /**
@@ -20,22 +20,24 @@ export function Navbar() {
   const [admin, setAdmin] = useState(false)
   const [isPatient, setIsPatient] = useState(false)
 
+  const checkPatientStatus = useCallback(async (userId: string | undefined) => {
+    if (userId) {
+      const { data: patient } = await supabase
+        .from("patients")
+        .select("id")
+        .eq("id", userId)
+        .single()
+      setIsPatient(!!patient)
+    } else {
+      setIsPatient(false)
+    }
+  }, [])
+
   useEffect(() => {
     // Check for Supabase user
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null)
-      
-      // Check if user is a patient
-      if (session?.user) {
-        const { data: patient } = await supabase
-          .from("patients")
-          .select("id")
-          .eq("id", session.user.id)
-          .single()
-        setIsPatient(!!patient)
-      } else {
-        setIsPatient(false)
-      }
+      await checkPatientStatus(session?.user?.id)
     })
 
     // Check for admin session
@@ -46,21 +48,11 @@ export function Navbar() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        const { data: patient } = await supabase
-          .from("patients")
-          .select("id")
-          .eq("id", session.user.id)
-          .single()
-        setIsPatient(!!patient)
-      } else {
-        setIsPatient(false)
-      }
+      await checkPatientStatus(session?.user?.id)
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [checkPatientStatus])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()

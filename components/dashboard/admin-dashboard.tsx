@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -33,14 +33,10 @@ export function AdminDashboard() {
   const [editingPsychiatrist, setEditingPsychiatrist] = useState<Psychiatrist | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
   /**
    * Fetch all psychiatrists and appointment requests
    */
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [psychiatristsResult, requestsResult] = await Promise.all([
         supabase.from("psychiatrists").select("*").order("name"),
@@ -57,12 +53,16 @@ export function AdminDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   /**
    * Delete a psychiatrist
    */
-  const deletePsychiatrist = async (id: string) => {
+  const deletePsychiatrist = useCallback(async (id: string) => {
     if (!confirm("Are you sure you want to delete this psychiatrist?")) return
 
     try {
@@ -75,12 +75,12 @@ export function AdminDashboard() {
       console.error("Error deleting psychiatrist:", error)
       alert(`Failed to delete psychiatrist: ${error.message}`)
     }
-  }
+  }, [fetchData])
 
   /**
    * Handle form submission for adding/editing psychiatrist
    */
-  const handlePsychiatristSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handlePsychiatristSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
 
@@ -115,7 +115,7 @@ export function AdminDashboard() {
       console.error("Error saving psychiatrist:", error)
       alert(`Failed to save psychiatrist: ${error.message}`)
     }
-  }
+  }, [editingPsychiatrist, fetchData])
 
   const handleSignOut = () => {
     clearAdminSession()

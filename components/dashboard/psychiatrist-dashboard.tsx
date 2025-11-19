@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -22,14 +22,10 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
   const [requests, setRequests] = useState<AppointmentRequest[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchRequests()
-  }, [userId])
-
   /**
    * Fetch appointment requests for this psychiatrist
    */
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     try {
       // Get the current user's email from Supabase auth
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -71,12 +67,16 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchRequests()
+  }, [userId, fetchRequests])
 
   /**
    * Update appointment request status
    */
-  const updateStatus = async (requestId: string, newStatus: string) => {
+  const updateStatus = useCallback(async (requestId: string, newStatus: string) => {
     try {
       const response = await fetch("/api/appointments/update", {
         method: "PUT",
@@ -101,7 +101,7 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
       console.error("Error updating status:", error)
       alert(`Failed to update status: ${error.message}`)
     }
-  }
+  }, [fetchRequests])
 
   const handleSignOut = async () => {
     await signOut()

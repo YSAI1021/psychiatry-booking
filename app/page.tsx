@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,18 +21,10 @@ export default function Home() {
   const [locationFilter, setLocationFilter] = useState<string>("")
   const [availabilityFilter, setAvailabilityFilter] = useState<string>("")
 
-  useEffect(() => {
-    fetchPsychiatrists()
-  }, [])
-
-  useEffect(() => {
-    filterPsychiatrists()
-  }, [psychiatrists, specialtyFilter, locationFilter, availabilityFilter])
-
   /**
    * Fetch all psychiatrists from Supabase
    */
-  const fetchPsychiatrists = async () => {
+  const fetchPsychiatrists = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("psychiatrists")
@@ -46,12 +38,12 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   /**
    * Filter psychiatrists based on search criteria
    */
-  const filterPsychiatrists = () => {
+  const filterPsychiatrists = useCallback(() => {
     let filtered = [...psychiatrists]
 
     if (specialtyFilter) {
@@ -73,7 +65,15 @@ export default function Home() {
     }
 
     setFilteredPsychiatrists(filtered)
-  }
+  }, [psychiatrists, specialtyFilter, locationFilter, availabilityFilter])
+
+  useEffect(() => {
+    fetchPsychiatrists()
+  }, [fetchPsychiatrists])
+
+  useEffect(() => {
+    filterPsychiatrists()
+  }, [filterPsychiatrists])
 
   if (loading) {
     return (
