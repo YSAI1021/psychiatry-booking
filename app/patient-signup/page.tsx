@@ -40,7 +40,7 @@ export default function PatientSignUp() {
     setError(null)
   
     try {
-      // Create Supabase auth user
+      // Step 1: Create Supabase auth user
       const { data: signUpData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -49,37 +49,58 @@ export default function PatientSignUp() {
       if (authError) throw authError
   
       const user = signUpData.user
+      const session = signUpData.session
+  
       if (!user) throw new Error("Sign up failed: no user returned")
   
-      // Insert patient record (RLS will allow this)
+      // Step 2: Manually ensure Supabase client is authenticated
+      if (session) {
+        await supabase.auth.setSession({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        })
+      } else {
+        // Give Supabase time to update session (if no session returned)
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+  
+      // Step 3: Confirm current user is available for RLS policy
+      const currentUser = await supabase.auth.getUser()
+      console.log("Current Supabase UID:", currentUser.data.user?.id)
+  
+      if (!currentUser.data.user?.id) {
+        throw new Error("Auth session not established — please try again.")
+      }
+  
+      // Step 4: Insert patient record (passes RLS)
       const { data: insertResult, error: patientError } = await supabase
-      .from("patients")
-      .insert([
-        {
-          user_id: user.id,
-          name: data.name,
-          email: data.email,
-        },
-      ])
-      .select() // add this to get the inserted row back (for debugging)
-      
+        .from("patients")
+        .insert([
+          {
+            user_id: user.id,
+            name: data.name,
+            email: data.email,
+          },
+        ])
+        .select()
+  
       console.log("INSERT RESULT:", insertResult)
       console.log("INSERT ERROR:", patientError)
-      
+  
       if (patientError) throw patientError
   
-      // If email confirmation is ON, do NOT redirect
-      if (!signUpData.session) {
-        setError("Account created! Please check your email to confirm your account.")
+      // Step 5: Redirect or show confirmation
+      if (!session) {
+        setError("Account created! Please check your email to confirm and then log in.")
         return
       }
   
-      // If email confirmation is OFF, redirect immediately
       router.push("/patient-dashboard")
       router.refresh()
   
     } catch (err: any) {
-      setError(err.message || "Failed to create account")
+      console.error("Signup error:", err)
+      setError(err.message || "Something went wrong. Please try again.")
     } finally {
       setLoading(false)
     }
