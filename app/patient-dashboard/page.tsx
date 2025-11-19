@@ -417,17 +417,18 @@ function EditAppointmentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] sm:max-h-[85vh] flex flex-col p-0 w-[95vw] sm:w-full">
         {request && (
           <>
-            <DialogHeader>
+            <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 flex-shrink-0">
               <DialogTitle>Edit Appointment Request</DialogTitle>
               <DialogDescription>
                 Update the details you previously submitted to your psychiatrist.
               </DialogDescription>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+              <div className="px-4 sm:px-6 overflow-y-auto flex-1 space-y-4 pb-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="edit-name">Name</Label>
@@ -556,13 +557,14 @@ function EditAppointmentDialog({
                 />
               </div>
 
-              {error && (
-                <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-                  {error}
-                </div>
-              )}
+                {error && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
+              </div>
 
-              <div className="flex justify-end gap-2">
+              <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-3 sm:pt-4 border-t flex-shrink-0 flex justify-end gap-2 bg-background">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
