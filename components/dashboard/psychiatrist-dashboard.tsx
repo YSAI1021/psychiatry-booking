@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { supabase, signOut } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase"
 import { AppointmentRequest } from "@/types/database"
 import { useRouter } from "next/navigation"
 
@@ -105,9 +105,16 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
   }, [fetchRequests])
 
   const handleSignOut = async () => {
-    await signOut()
-    router.push("/psychiatrist-login")
-    router.refresh()
+    try {
+      await supabase.auth.signOut()
+      router.push("/psychiatrist-login")
+      router.refresh()
+    } catch (error) {
+      console.error("Error signing out:", error)
+      // Still redirect even if there's an error
+      router.push("/psychiatrist-login")
+      router.refresh()
+    }
   }
 
   const pendingRequests = requests.filter((r) => r.status === "pending")
