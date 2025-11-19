@@ -17,10 +17,6 @@ interface SignUpFormData {
   confirmPassword: string
 }
 
-/**
- * Patient sign up page
- * Allows patients to create an account
- */
 export default function PatientSignUp() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
@@ -38,73 +34,63 @@ export default function PatientSignUp() {
   const onSubmit = async (data: SignUpFormData) => {
     setLoading(true)
     setError(null)
-  
+
     try {
-      // Step 1: Create Supabase auth user
+      // Step 1: Sign up user
       const { data: signUpData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
       })
-  
+
       if (authError) throw authError
-  
-      const user = signUpData.user
+
       const session = signUpData.session
-  
-      if (!user) throw new Error("Sign up failed: no user returned")
-  
-      // Step 2: Manually ensure Supabase client is authenticated
+
+      // Step 2: Wait for session propagation
       if (session) {
         await supabase.auth.setSession({
           access_token: session.access_token,
           refresh_token: session.refresh_token,
         })
-      } else {
-        // Give Supabase time to update session (if no session returned)
-        await new Promise(resolve => setTimeout(resolve, 500))
       }
-  
-      // Step 3: Confirm current user is available for RLS policy
-      const currentUser = await supabase.auth.getUser()
-      console.log("Current Supabase UID:", currentUser.data.user?.id)
-  
-      if (!currentUser.data.user?.id) {
-        throw new Error("Auth session not established — please try again.")
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      // Step 3: Get current authenticated user ID
+      const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser()
+
+      if (currentUserError || !currentUserData.user) {
+        throw new Error("User not authenticated after signup.")
       }
-  
-      // Step 4: Insert patient record (passes RLS)
-      const { data: insertResult, error: patientError } = await supabase
-        .from("patients")
-        .insert([
-          {
-            user_id: user.id,
-            name: data.name,
-            email: data.email,
-          },
-        ])
-        .select()
-  
-      console.log("INSERT RESULT:", insertResult)
-      console.log("INSERT ERROR:", patientError)
-  
-      if (patientError) throw patientError
-  
-      // Step 5: Redirect or show confirmation
+
+      const uid = currentUserData.user.id
+
+      // Step 4: Insert into patients table
+      const { error: insertError } = await supabase.from("patients").insert([
+        {
+          user_id: uid,
+          name: data.name,
+          email: data.email,
+        },
+      ])
+
+      if (insertError) throw insertError
+
+      // Step 5: Redirect
       if (!session) {
         setError("Account created! Please check your email to confirm and then log in.")
         return
       }
-  
+
       router.push("/patient-dashboard")
       router.refresh()
-  
+
     } catch (err: any) {
       console.error("Signup error:", err)
       setError(err.message || "Something went wrong. Please try again.")
     } finally {
       setLoading(false)
     }
-  }  
+  }
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
@@ -119,94 +105,51 @@ export default function PatientSignUp() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                {...register("name", {
-                  required: "Name is required",
-                  minLength: {
-                    value: 2,
-                    message: "Name must be at least 2 characters",
-                  },
-                })}
-                placeholder="Your full name"
-              />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
-              )}
+              <Input id="name" {...register("name", {
+                required: "Name is required",
+                minLength: { value: 2, message: "Name must be at least 2 characters" },
+              })} placeholder="Your full name" />
+              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                {...register("email", {
-                  required: "Email is required",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Invalid email address",
-                  },
-                })}
-                placeholder="your.email@example.com"
-              />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
+              <Input id="email" type="email" {...register("email", {
+                required: "Email is required",
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: "Invalid email address",
+                },
+              })} placeholder="your.email@example.com" />
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                {...register("password", {
-                  required: "Password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Password must be at least 6 characters",
-                  },
-                })}
-                placeholder="Enter your password"
-              />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
+              <Input id="password" type="password" {...register("password", {
+                required: "Password is required",
+                minLength: { value: 6, message: "Password must be at least 6 characters" },
+              })} placeholder="Enter your password" />
+              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                {...register("confirmPassword", {
-                  required: "Please confirm your password",
-                  validate: (value) =>
-                    value === password || "Passwords do not match",
-                })}
-                placeholder="Confirm your password"
-              />
-              {errors.confirmPassword && (
-                <p className="text-sm text-destructive">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
+              <Input id="confirmPassword" type="password" {...register("confirmPassword", {
+                required: "Please confirm your password",
+                validate: (value) => value === password || "Passwords do not match",
+              })} placeholder="Confirm your password" />
+              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
             </div>
 
-            {error && (
-              <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
-                {error}
-              </div>
-            )}
+            {error && <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">{error}</div>}
 
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Creating account..." : "Sign Up"}
             </Button>
 
             <p className="text-sm text-center text-muted-foreground">
-              Already have an account?{" "}
-              <Link href="/patient-login" className="text-primary hover:underline">
-                Sign in
-              </Link>
+              Already have an account? <Link href="/patient-login" className="text-primary hover:underline">Sign in</Link>
             </p>
           </form>
         </CardContent>
@@ -214,4 +157,3 @@ export default function PatientSignUp() {
     </div>
   )
 }
-
