@@ -25,7 +25,7 @@ export function Navbar() {
       const { data: patient } = await supabase
         .from("patients")
         .select("id")
-        .eq("id", userId)
+        .eq("user_id", userId)
         .single()
       setIsPatient(!!patient)
     } else {

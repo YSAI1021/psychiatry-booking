@@ -45,7 +45,27 @@ export default function PatientSignUp() {
       })
   
       if (authError) throw authError
-  
+
+      // Ensure patient profile exists
+      if (signUpData.user) {
+        const { error: patientError } = await supabase
+          .from("patients")
+          .upsert(
+            [
+              {
+                user_id: signUpData.user.id,
+                name: data.name,
+                email: data.email,
+              },
+            ],
+            { onConflict: "user_id" }
+          )
+
+        if (patientError) {
+          console.error("Error creating patient record:", patientError)
+        }
+      }
+
       // Check if we got a session (user is automatically logged in)
       if (signUpData.session) {
         // User is logged in - redirect to dashboard

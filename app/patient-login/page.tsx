@@ -43,15 +43,28 @@ export default function PatientLogin() {
       if (authError) throw authError
   
       if (authData.user) {
-        // Verify user is a patient - FIX: use user_id instead of id
+        // Ensure a patient record exists for this user
         const { data: patient, error: patientError } = await supabase
           .from("patients")
           .select("id")
-          .eq("user_id", authData.user.id)  // Changed from "id" to "user_id"
+          .eq("user_id", authData.user.id)
           .single()
-  
+
         if (patientError || !patient) {
-          throw new Error("Patient account not found")
+          const { error: insertError } = await supabase.from("patients").upsert(
+            [
+              {
+                user_id: authData.user.id,
+                name: authData.user.user_metadata?.name || "Patient",
+                email: authData.user.email,
+              },
+            ],
+            { onConflict: "user_id" }
+          )
+
+          if (insertError) {
+            throw new Error("Patient account not found")
+          }
         }
   
         router.push("/patient-dashboard")
