@@ -52,16 +52,20 @@ export default function PatientSignUp() {
       if (!user) throw new Error("Sign up failed: no user returned")
   
       // Insert patient record (RLS will allow this)
-      const { error: patientError } = await supabase
-        .from("patients")
-        .insert([
-          {
-            user_id: user.id,
-            name: data.name,
-            email: data.email,
-          },
-        ])
-  
+      const { data: insertResult, error: patientError } = await supabase
+      .from("patients")
+      .insert([
+        {
+          user_id: user.id,
+          name: data.name,
+          email: data.email,
+        },
+      ])
+      .select() // add this to get the inserted row back (for debugging)
+      
+      console.log("INSERT RESULT:", insertResult)
+      console.log("INSERT ERROR:", patientError)
+      
       if (patientError) throw patientError
   
       // If email confirmation is ON, do NOT redirect
