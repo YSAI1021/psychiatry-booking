@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -36,46 +36,33 @@ export default function PatientSignUp() {
     setError(null)
 
     try {
-      // Step 1: Sign up user
       const { data: signUpData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
+        options: {
+          data: { name: data.name }, // Store name in metadata
+        },
       })
 
       if (authError) throw authError
 
       const session = signUpData.session
 
-      // Step 2: Wait for session propagation
       if (session) {
         await supabase.auth.setSession({
           access_token: session.access_token,
           refresh_token: session.refresh_token,
         })
       }
-      await new Promise(resolve => setTimeout(resolve, 1000))
 
-      // Step 3: Get current authenticated user ID
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
       const { data: currentUserData, error: currentUserError } = await supabase.auth.getUser()
 
       if (currentUserError || !currentUserData.user) {
         throw new Error("User not authenticated after signup.")
       }
 
-      const uid = currentUserData.user.id
-
-      // Step 4: Insert into patients table
-      const { error: insertError } = await supabase.from("patients").insert([
-        {
-          user_id: uid,
-          name: data.name,
-          email: data.email,
-        },
-      ])
-
-      if (insertError) throw insertError
-
-      // Step 5: Redirect
       if (!session) {
         setError("Account created! Please check your email to confirm and then log in.")
         return
