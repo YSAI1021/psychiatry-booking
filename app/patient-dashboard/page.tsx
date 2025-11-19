@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -326,19 +326,20 @@ function EditAppointmentDialog({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const defaultValues: EditAppointmentFormValues | undefined = request
-    ? {
-        name: request.patient_name || "",
-        email: request.patient_email || "",
-        preferred_appointment_type: request.preferred_appointment_type || "",
-        preferred_times: normalizeArray(request.preferred_times),
-        what_brings_you: request.what_brings_you || "",
-        hoping_to_work_on: normalizeArray(request.hoping_to_work_on),
-        other_work_on: request.other_work_on || "",
-        spoken_before: request.spoken_before || "",
-        anything_else: request.anything_else || "",
-      }
-    : undefined
+  const defaultValues: EditAppointmentFormValues | undefined = useMemo(() => {
+    if (!request) return undefined
+    return {
+      name: request.patient_name || "",
+      email: request.patient_email || "",
+      preferred_appointment_type: request.preferred_appointment_type || "",
+      preferred_times: normalizeArray(request.preferred_times),
+      what_brings_you: request.what_brings_you || "",
+      hoping_to_work_on: normalizeArray(request.hoping_to_work_on),
+      other_work_on: request.other_work_on || "",
+      spoken_before: request.spoken_before || "",
+      anything_else: request.anything_else || "",
+    }
+  }, [request])
 
   const { register, handleSubmit, setValue, watch, reset } = useForm<EditAppointmentFormValues>({
     defaultValues,
