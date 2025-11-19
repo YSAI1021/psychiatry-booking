@@ -56,7 +56,6 @@ export default function PatientSignUp() {
         .from("patients")
         .insert([
           {
-            id: user.id,
             user_id: user.id,
             name: data.name,
             email: data.email,
