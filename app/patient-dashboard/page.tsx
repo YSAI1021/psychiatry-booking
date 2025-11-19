@@ -25,28 +25,28 @@ export default function PatientDashboard() {
         router.push("/patient-login")
         return
       }
-
+  
       setUser(session.user)
-
-      // Verify user is a patient
+  
+      // Verify user is a patient - FIX: use user_id instead of id
       const { data: patient } = await supabase
         .from("patients")
         .select("id")
-        .eq("id", session.user.id)
+        .eq("user_id", session.user.id)  // Changed from "id" to "user_id"
         .single()
-
+  
       if (!patient) {
         router.push("/patient-login")
         return
       }
-
+  
       // Fetch patients appointment requests
       const { data, error } = await supabase
         .from("appointment_requests")
         .select("*")
         .eq("patient_email", session.user.email)
         .order("created_at", { ascending: false })
-
+  
       if (error) throw error
       setRequests(data || [])
     } catch (error) {

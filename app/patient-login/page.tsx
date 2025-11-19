@@ -33,27 +33,27 @@ export default function PatientLogin() {
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true)
     setError(null)
-
+  
     try {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       })
-
+  
       if (authError) throw authError
-
+  
       if (authData.user) {
-        // Verify user is a patient
-        const { data: patient } = await supabase
+        // Verify user is a patient - FIX: use user_id instead of id
+        const { data: patient, error: patientError } = await supabase
           .from("patients")
           .select("id")
-          .eq("id", authData.user.id)
+          .eq("user_id", authData.user.id)  // Changed from "id" to "user_id"
           .single()
-
-        if (!patient) {
+  
+        if (patientError || !patient) {
           throw new Error("Patient account not found")
         }
-
+  
         router.push("/patient-dashboard")
         router.refresh()
       }
