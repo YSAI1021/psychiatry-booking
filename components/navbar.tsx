@@ -63,6 +63,8 @@ export function Navbar() {
   }
 
   const isActive = (path: string) => pathname === path
+  const isDashboardRoute = pathname?.startsWith("/dashboard") || pathname === "/patient-dashboard"
+  const shouldShowNavSignOut = (user || admin) && !isDashboardRoute
 
   return (
     <nav className="border-b bg-background">
@@ -121,17 +123,15 @@ export function Navbar() {
         </div>
         <div className="flex items-center space-x-4">
           <ThemeToggle />
-          {(user || admin) && (
+          <Link href="/patient-signup">
+            <Button variant="outline">
+              Patient Sign Up
+            </Button>
+          </Link>
+          {shouldShowNavSignOut && (
             <Button variant="outline" onClick={handleSignOut}>
               Sign Out
             </Button>
-          )}
-          {!user && !admin && (
-            <Link href="/patient-signup">
-              <Button variant="outline">
-                Patient Sign Up
-              </Button>
-            </Link>
           )}
         </div>
       </div>
