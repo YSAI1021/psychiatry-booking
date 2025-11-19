@@ -41,10 +41,35 @@ export default function PatientSignUp() {
 
     try {
       // Create Supabase auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const {
+        data: { session, user },
+        error: authError,
+      } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
       })
+      
+      if (authError) throw authError
+      
+      if (!user || !session) throw new Error("Sign up failed to return session or user")
+      
+      // Ensure Supabase client uses the new session
+      await supabase.auth.setSession(session)
+      
+      // Then insert patient record
+      const { error: patientError } = await supabase
+        .from("patients")
+        .insert([
+          {
+            id: user.id,
+            user_id: user.id,
+            name: data.name,
+            email: data.email,
+          },
+        ])
+      
+      if (patientError) throw patientError
+      
 
       if (authError) throw authError
 

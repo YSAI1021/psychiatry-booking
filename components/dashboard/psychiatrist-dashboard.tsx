@@ -351,9 +351,31 @@ const getPreviewText = (text?: string | null) => {
   return text.length > 100 ? `${text.slice(0, 100)}…` : text
 }
 
-const formatList = (values?: string[] | null) => {
-  if (!values || values.length === 0) return "Not provided"
-  return values.join(", ")
+const formatList = (values?: string[] | string | null) => {
+  if (!values) return "Not provided"
+
+  if (Array.isArray(values)) {
+    return values.length > 0 ? values.join(", ") : "Not provided"
+  }
+
+  // Some Supabase configurations may return arrays as serialized strings
+  if (typeof values === "string") {
+    const trimmed = values.trim()
+    if (!trimmed) return "Not provided"
+
+    try {
+      const parsed = JSON.parse(trimmed)
+      if (Array.isArray(parsed)) {
+        return parsed.length > 0 ? parsed.join(", ") : "Not provided"
+      }
+    } catch {
+      // Not JSON, fall through to return trimmed string
+    }
+
+    return trimmed
+  }
+
+  return "Not provided"
 }
 
 function DetailRow({ label, value }: { label: string; value: ReactNode }) {

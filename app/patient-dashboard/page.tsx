@@ -40,7 +40,7 @@ export default function PatientDashboard() {
         return
       }
 
-      // Fetch patient's appointment requests
+      // Fetch patients appointment requests
       const { data, error } = await supabase
         .from("appointment_requests")
         .select("*")
