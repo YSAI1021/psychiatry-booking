@@ -12,7 +12,8 @@ import { useRouter } from "next/navigation"
 interface PsychiatristDashboardProps {
   userId: string
 }
-
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 /**
  * Psychiatrist dashboard component
  * Displays appointment requests for the logged-in psychiatrist
@@ -27,7 +28,7 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
    */
   const fetchRequests = useCallback(async () => {
     try {
-      // Get the current user's email from Supabase auth
+      // Get the current users email from Supabase auth
       const { data: { user: authUser } } = await supabase.auth.getUser()
       
       if (!authUser?.email) {
@@ -45,7 +46,7 @@ export function PsychiatristDashboard({ userId }: PsychiatristDashboardProps) {
 
       if (psychError) {
         console.error("Error fetching psychiatrist:", psychError)
-        // If psychiatrist doesn't exist, show empty list
+        // If psychiatrist does not exist, show empty list
         setRequests([])
         setLoading(false)
         return

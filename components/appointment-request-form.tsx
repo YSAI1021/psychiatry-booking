@@ -25,6 +25,8 @@ interface AppointmentRequestFormProps {
   onSuccess: () => void
 }
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 /**
  * Appointment request form component
  * Handles form submission and validation for appointment requests
