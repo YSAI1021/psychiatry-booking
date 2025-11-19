@@ -300,7 +300,7 @@ export function AppointmentRequestForm({
                   <span className="text-sm">{option}</span>
                 </label>
               ))}
-              <div className="flex items-center space-x-2 pl-6">
+              <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   checked={hopingToWorkOn.some((item) => item.startsWith("Other:"))}
@@ -325,7 +325,7 @@ export function AppointmentRequestForm({
                     className="max-w-xs"
                   />
                 )}
-              </div>
+              </label>
             </div>
           </div>
 

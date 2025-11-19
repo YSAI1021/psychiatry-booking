@@ -17,9 +17,9 @@ export default function Home() {
   const [psychiatrists, setPsychiatrists] = useState<Psychiatrist[]>([])
   const [filteredPsychiatrists, setFilteredPsychiatrists] = useState<Psychiatrist[]>([])
   const [loading, setLoading] = useState(true)
-  const [specialtyFilter, setSpecialtyFilter] = useState<string>("")
+  const [nameFilter, setNameFilter] = useState<string>("")
   const [locationFilter, setLocationFilter] = useState<string>("")
-  const [availabilityFilter, setAvailabilityFilter] = useState<string>("")
+  const [specialtyFilter, setSpecialtyFilter] = useState<string>("")
 
   /**
    * Fetch all psychiatrists from Supabase
@@ -46,9 +46,9 @@ export default function Home() {
   const filterPsychiatrists = useCallback(() => {
     let filtered = [...psychiatrists]
 
-    if (specialtyFilter) {
+    if (nameFilter) {
       filtered = filtered.filter((p) =>
-        p.specialty.toLowerCase().includes(specialtyFilter.toLowerCase())
+        p.name.toLowerCase().includes(nameFilter.toLowerCase())
       )
     }
 
@@ -58,14 +58,14 @@ export default function Home() {
       )
     }
 
-    if (availabilityFilter) {
+    if (specialtyFilter) {
       filtered = filtered.filter((p) =>
-        p.availability?.toLowerCase().includes(availabilityFilter.toLowerCase())
+        p.specialty.toLowerCase().includes(specialtyFilter.toLowerCase())
       )
     }
 
     setFilteredPsychiatrists(filtered)
-  }, [psychiatrists, specialtyFilter, locationFilter, availabilityFilter])
+  }, [psychiatrists, nameFilter, locationFilter, specialtyFilter])
 
   useEffect(() => {
     fetchPsychiatrists()
@@ -99,12 +99,12 @@ export default function Home() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="specialty">Specialty</Label>
+              <Label htmlFor="name">Name</Label>
               <Input
-                id="specialty"
-                value={specialtyFilter}
-                onChange={(e) => setSpecialtyFilter(e.target.value)}
-                placeholder="Filter by specialty..."
+                id="name"
+                value={nameFilter}
+                onChange={(e) => setNameFilter(e.target.value)}
+                placeholder="Filter by name..."
               />
             </div>
             <div className="space-y-2">
@@ -117,12 +117,12 @@ export default function Home() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="availability">Availability</Label>
+              <Label htmlFor="specialty">Specialty</Label>
               <Input
-                id="availability"
-                value={availabilityFilter}
-                onChange={(e) => setAvailabilityFilter(e.target.value)}
-                placeholder="Filter by availability..."
+                id="specialty"
+                value={specialtyFilter}
+                onChange={(e) => setSpecialtyFilter(e.target.value)}
+                placeholder="Filter by specialty..."
               />
             </div>
           </div>
