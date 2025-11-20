@@ -70,8 +70,8 @@ export function Navbar() {
     <nav className="border-b bg-background">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center space-x-6">
-          <Link href="/" className="text-xl font-bold">
-            PsyConnect
+          <Link href="/" className="flex items-center">
+            <img src="/favicon.png" alt="PsyConnect" className="h-8 w-8" />
           </Link>
           <div className="flex space-x-4">
             <Link href="/">
