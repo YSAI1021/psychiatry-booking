@@ -71,7 +71,10 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center space-x-6">
           <Link href="/" className="flex items-center space-x-2">
-            <img src="/favicon.png" alt="Logo" className="h-6 w-6" />
+            <picture>
+              <source srcSet="/favicon-dark.png" media="(prefers-color-scheme: dark)" />
+              <img src="/favicon.png" alt="Logo" className="h-6 w-6" />
+            </picture>
             <span className="font-semibold text-lg">PsyConnect</span>
           </Link>
           <div className="flex space-x-4">
