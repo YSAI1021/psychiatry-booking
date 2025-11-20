@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "PsyConnect - Connect with Mental Health Professionals",
   description: "Browse psychiatrists and request appointments",
+  icons: {
+    icon: "/favicon.png",
+  },
 }
 
 /**
