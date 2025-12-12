@@ -281,7 +281,7 @@ This setup fulfills the course requirement for an automated deployment pipeline.
 
 ## Laure
 - Cleaned and standardized specialty and profile dataset  
-- Configured Google Analytics tracking for the A/B test page  
+- Configured Google Analytics tracking for the A/B test page
 - Conducted QA testing for dashboards and forms  
 - Improved filtering logic based on cleaned data  
 
@@ -314,6 +314,31 @@ This setup fulfills the course requirement for an automated deployment pipeline.
 
 ---
 # How to compute and access the A/B test endpoint
+
+## A/B Test Endpoint
+The SHA-1–derived endpoint for our team is /d4a7e4e
+
+Production URL: https://psychiatry-booking.vercel.app/d4a7e4e
+
+This page displays our team member nicknames and a test button (id="abtest") whose label varies based on a randomized A/B assignment:
+- Variant A: “kudos”
+- Variant B: “thanks”
+Each user is assigned a variant on their first visit, and this choice is stored in localStorage so it remains consistent on refresh or return.
+
+Endpoint implementation: app/d4a7e4e/page.tsx
+
+## Google Analytics
+The project uses Google Analytics 4 (GA4) to track page views and A/B variant exposure
+
+Analytics is initialized globally using our measurement ID: G-DEDEKN3T75
+
+Whenever a variant is assigned or retrieved, the page sends a GA event:
+- Event: ab_test_variant
+- Parameters:
+-- variant (“A” or “B”)
+-- visitor_type (“new” or “returning”)
+  
+GA4 dashboards confirm successful ingestion of exposure events and balanced distribution across variants.
 
 ---
 # Usage
